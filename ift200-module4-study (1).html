@@ -146,6 +146,8 @@
     line-height: 1.55;
     color: var(--ink);
     flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
   .card-body p { margin: 0 0 12px; }
   .card-body ul { margin: 0 0 12px; padding-left: 20px; }
@@ -169,6 +171,19 @@
   .callout strong { display: block; margin-bottom: 2px; font-size: 12.5px; text-transform: none; color: inherit; }
 
   /* schema table visuals */
+  .table-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+    margin: 12px 0;
+  }
+  .table-scroll:focus-visible {
+    outline: 2px solid var(--teal);
+    outline-offset: 2px;
+  }
+  .table-scroll .rel-table {
+    margin: 0;
+    overflow-wrap: normal;
+  }
   .rel-table {
     width: 100%;
     border-collapse: collapse;
@@ -500,7 +515,7 @@ const steps = [
       </ul>
       <table class="rel-table">
         <caption>STUDENT relation</caption>
-        <thead><tr><th class="pk">Name</th><th>Ssn</th><th>Home_phone</th><th>Address</th><th>Gpa</th></tr></thead>
+        <thead><tr><th>Name</th><th class="pk">Ssn</th><th>Home_phone</th><th>Address</th><th>Gpa</th></tr></thead>
         <tbody>
           <tr><td>Benjamin Bayer</td><td>305-61-2435</td><td>373-1616</td><td>2918 Bluebonnet Ln</td><td>3.21</td></tr>
           <tr><td>Chung-cha Kim</td><td>381-62-1245</td><td>375-4409</td><td>125 Kirby Rd</td><td>2.89</td></tr>
@@ -515,7 +530,7 @@ const steps = [
       <p>Every cell in a relation holds exactly <strong>one indivisible value</strong> — never a list, never multiple values stuffed together.</p>
       <p>Each value also has to come from the right <span class="mono">domain</span> — the data type and format allowed for that column.</p>
       <div class="callout teal"><strong>Example domains</strong>SSN → 9 digits, formatted ###-##-####. Phone → 10 digits. Age → a positive integer.</div>
-      <p>A cell can also be <strong>NULL</strong> — meaning unknown, not available, or not applicable for that row.</p>
+      <p>When the schema allows it, a cell can also be <strong>NULL</strong> — meaning unknown, not available, or not applicable for that row. NULL is not zero or an empty string.</p>
     `},
   { id: "keys", type: "concept",
     eyebrow: "Mod 4 · 5/10 · Identity",
@@ -523,12 +538,13 @@ const steps = [
     body: `
       <p>Every table needs some column (or combo of columns) whose value is <strong>unique for every row</strong>. That's how the database tells rows apart.</p>
       <ul>
-        <li><strong>Superkey</strong> — any set of attributes with no duplicate values across rows.</li>
+        <li><strong>Superkey</strong> — any set of attributes whose combined values uniquely identify a row in every valid state.</li>
         <li><strong>Key</strong> — a <em>minimal</em> superkey. Remove any attribute from it and it stops being unique.</li>
         <li><strong>Primary key</strong> — the one key you pick (out of possibly several candidates) to officially identify rows.</li>
       </ul>
       <div class="schema-line">CAR(<span class="pk">State, Reg#</span>, SerialNo, Make, Model, Year)</div>
       <p>Here {State, Reg#} and {SerialNo} are both keys. You'd pick one as primary — usually the one with fewer attributes.</p>
+      <p>Each minimal superkey is a <strong>candidate key</strong>. {SerialNo, Make} is a superkey but not a candidate key: removing Make still leaves a unique identifier. Minimal means no unnecessary attributes, not necessarily the fewest attributes among all candidate keys.</p>
       <div class="callout"><strong>No natural key?</strong>Assign a made-up row ID. That's called a <span class="mono">surrogate key</span> (or artificial key).</div>
     `},
   { id: "schema", type: "concept",
@@ -582,7 +598,7 @@ const steps = [
       <p>The <span class="mono">SerialNo</span> in DRIVER is a <strong>foreign key</strong> — it points to the primary key of the same name in CAR. A foreign key value must either:</p>
       <ul>
         <li>match an existing primary key value in the referenced table, <strong>or</strong></li>
-        <li>be NULL (only allowed if that FK isn't also part of this table's own primary key).</li>
+        <li>be NULL, only if the schema permits NULL and that FK isn't also part of this table's own primary key.</li>
       </ul>
       <p>On a schema diagram, this is drawn as an arrow from the FK to the PK it references.</p>
     `},
@@ -591,11 +607,23 @@ const steps = [
     title: "The COMPANY database schema",
     body: `
       <p>Zoom out — this is what a finished logical design looks like. Every underline is entity integrity. Every arrow (implied here by the FK label) is referential integrity.</p>
-      <div class="schema-line">Employee(<span class="pk">Ssn</span>, Fname, Lname, Bdate, Address, Super_ssn, Dno)</div>
-      <div class="schema-line">Department(<span class="pk">Dnumber</span>, Dname, Mgr_ssn)</div>
-      <div class="schema-line">Project(<span class="pk">Pnumber</span>, Pname, Plocation, Dnum)</div>
-      <div class="schema-line">Works_on(<span class="pk">Essn, Pno</span>, Hours)</div>
-      <p>Employee.Dno → Department.Dnumber. Project.Dnum → Department.Dnumber. Works_on.Essn → Employee.Ssn. That's the whole idea, just repeated per relationship.</p>
+      <div class="schema-line">EMPLOYEE(Fname, Minit, Lname, <span class="pk">Ssn</span>, Bdate, Address, Sex, Salary, <span class="fk-text">Super_ssn, Dno</span>)</div>
+      <div class="schema-line">DEPARTMENT(Dname, <span class="pk">Dnumber</span>, <span class="fk-text">Mgr_ssn</span>, Mgr_start_date)</div>
+      <div class="schema-line">DEPT_LOCATIONS(<span class="pk"><span class="fk-text">Dnumber</span>, Dlocation</span>)</div>
+      <div class="schema-line">PROJECT(Pname, <span class="pk">Pnumber</span>, Plocation, <span class="fk-text">Dnum</span>)</div>
+      <div class="schema-line">WORKS_ON(<span class="pk fk-text">Essn, Pno</span>, Hours)</div>
+      <div class="schema-line">DEPENDENT(<span class="pk"><span class="fk-text">Essn</span>, Dependent_name</span>, Sex, Bdate, Relationship)</div>
+      <ul>
+        <li>EMPLOYEE.Dno → DEPARTMENT.Dnumber</li>
+        <li>EMPLOYEE.Super_ssn → EMPLOYEE.Ssn (a self-reference)</li>
+        <li>DEPARTMENT.Mgr_ssn → EMPLOYEE.Ssn</li>
+        <li>DEPT_LOCATIONS.Dnumber → DEPARTMENT.Dnumber</li>
+        <li>PROJECT.Dnum → DEPARTMENT.Dnumber</li>
+        <li>WORKS_ON.Essn → EMPLOYEE.Ssn</li>
+        <li>WORKS_ON.Pno → PROJECT.Pnumber</li>
+        <li>DEPENDENT.Essn → EMPLOYEE.Ssn</li>
+      </ul>
+      <p>The slide's Research department (5) has Bellaire, Sugarland, and Houston in three DEPT_LOCATIONS rows. WORKS_ON stores each employee/project pair with its Hours. DEPENDENT uses the employee's key plus Dependent_name to identify a dependent.</p>
       <div class="callout teal"><strong>Next up</strong>The actual step-by-step process for converting an EER diagram into a schema like this one — that's Module 5, right after this card.</div>
     `},
   { id: "eer-overview", type: "concept",
@@ -629,7 +657,7 @@ const steps = [
     eyebrow: "Mod 5 · 3/10 · Cardinality: 1-N",
     title: "1-to-Many relationships",
     body: `
-      <p>In a 1-N relationship, one side has exactly one match; the other can have many. Example: each Order was placed by exactly one User, but a User can place many Orders.</p>
+      <p>In a 1-N relationship, each row on the Many side can reference at most one row on the One side. Participation rules determine whether a match is required. In this lecture's example, each Order must have exactly one User, but a User can place many Orders.</p>
       <div class="callout"><strong>The rule</strong>Add an extra column — a foreign key — to the table on the <strong>Many</strong> side, referencing the primary key of the <strong>One</strong> side.</div>
       <div class="schema-line">Order(<span class="pk">OrderID</span>, Address, Payment, <span class="fk-text">Uname</span>)</div>
       <p>Order.Uname is a foreign key pointing at User.Username. If the relationship itself had attributes, those columns would also go on the Many side's table.</p>
@@ -640,6 +668,7 @@ const steps = [
     body: `
       <p>A 1-1 relationship is a 1-N relationship where N happens to equal 1. Same rule applies.</p>
       <p>The one difference: since both sides only ever match one row, you get to choose <strong>either</strong> table to hold the foreign key — it doesn't have to be one particular side, because there's no "Many" side to force the choice.</p>
+      <div class="callout teal"><strong>Implementation detail beyond the slide</strong>The FK must also be UNIQUE (or the table's PK) to enforce the one-to-one maximum. Prefer the side with total participation; use NOT NULL when a reference is required. An ordinary FK alone still allows many rows to reference the same parent.</div>
     `},
   { id: "eer-nm", type: "concept",
     eyebrow: "Mod 5 · 5/10 · Cardinality: N-M",
@@ -657,6 +686,11 @@ const steps = [
       <p>When an EER diagram has a superclass with subclasses (like Book → Paper Book, Electronic Book), each entity — super and sub — still gets its own table.</p>
       <div class="callout"><strong>The rule</strong>Give each subclass table a foreign key that references the primary key of the superclass table.</div>
       <p>So Paper_Book and Electronic_Book each carry a FK pointing back to Book's primary key, linking every specific book to its general record.</p>
+      <div class="schema-line">Book(<span class="pk">BookID</span>, Title)</div>
+      <div class="schema-line">Paper_Book(<span class="pk fk-text">BookID</span>, Page_count)</div>
+      <div class="schema-line">Electronic_Book(<span class="pk fk-text">BookID</span>, File_format)</div>
+      <p>In this illustrative implementation, each subclass uses BookID as both its PK and its FK. Shared attributes stay in Book; subtype-specific attributes stay in the subclass.</p>
+      <p>On the lecture diagram, <strong>d</strong> means disjoint subclasses and the double line means total specialization: every Book belongs to exactly one of the two subclasses. Foreign keys alone do not enforce both of those rules.</p>
     `},
   { id: "eer-union", type: "concept",
     eyebrow: "Mod 5 · 7/10 · Advanced: union",
@@ -665,7 +699,8 @@ const steps = [
       <p>A union is the reverse shape from inheritance: one table (like Book Copy) can relate to <em>one of several</em> different entity types (E-Book <em>or</em> Paper-Book).</p>
       <div class="callout"><strong>The rule</strong>Put multiple foreign keys in the main category table, one referencing each possible type.</div>
       <div class="schema-line">Book_Copy(<span class="pk">BCID</span>, EBID, PBID)</div>
-      <p>For any given row, only one of EBID / PBID is actually filled in — the other is NULL, depending on which type that copy is.</p>
+      <p>Book_Copy.EBID → E_Book.EBID; Book_Copy.PBID → Paper_Book.PBID.</p>
+      <p>For the lecture's either/or example, only one of EBID / PBID is filled in per row; the other is NULL. An additional constraint is needed to enforce that exclusive choice; two FKs alone do not. This is the mapping used in this lecture, not a rule that every possible union category is exclusive.</p>
     `},
   { id: "eer-composite", type: "concept",
     eyebrow: "Mod 5 · 8/10 · Attributes: composite",
@@ -673,6 +708,8 @@ const steps = [
     body: `
       <p>A composite attribute is one conceptual attribute made of multiple parts — think "Address" splitting into Street, City, State, Zip.</p>
       <div class="callout"><strong>The rule</strong>Give each part its own column in the table. There's no single "Address" column — there's Street, City, State, and Zip, side by side.</div>
+      <p>The transcript uses a student's Name: First_name, Middle_initial, and Last_name become separate columns, with no extra Name column.</p>
+      <div class="schema-line">Student(<span class="pk">StudentID</span>, First_name, Middle_initial, Last_name)</div>
     `},
   { id: "eer-multivalued", type: "concept",
     eyebrow: "Mod 5 · 9/10 · Attributes: multi-valued",
@@ -682,6 +719,12 @@ const steps = [
       <div class="callout watch"><strong>The rule</strong>Create a new table for it. Add a foreign key back to the original entity. Each value gets its own row.</div>
       <div class="schema-line">Dept_Locations(<span class="pk">Dnumber, Dlocation</span>)</div>
       <p>Dnumber is a FK referencing Department.Dnumber — and together with Dlocation it forms this table's primary key, since a department can repeat across rows but not the same location twice.</p>
+      <table class="rel-table">
+        <caption>Transcript example: department 1 is Research (separate from the COMPANY slide data)</caption>
+        <thead><tr><th class="pk fk">Dnumber (PK, FK)</th><th class="pk">Dlocation (PK)</th></tr></thead>
+        <tbody><tr><td>1</td><td>Seattle</td></tr><tr><td>1</td><td>San Francisco</td></tr></tbody>
+      </table>
+      <p>A double oval in an EER diagram identifies a multi-valued attribute. The normalized relational mapping uses separate rows even if a particular DBMS could accept a comma-separated text string.</p>
     `},
   { id: "eer-worked-example", type: "concept",
     eyebrow: "Mod 5 · 10/10 · Full worked example",
@@ -700,7 +743,121 @@ const steps = [
           <tr><td>16</td><td>857 Ex St</td><td>Master Card</td><td>Adam_Sam</td></tr>
         </tbody>
       </table>
-      <p>4 entities/relationships in the EER diagram → 4 tables. One 1-N relationship (Order→User) became a foreign key column. One N-M relationship (Order↔Item) became its own table, Contains.</p>
+      <p>Three entities plus one N-M relationship produce four tables. The 1-N relationship becomes Order.Uname, not a fifth table. The Contains table stores the item details for each order.</p>
+    `},
+  { id: "relational-foundations", type: "concept",
+    eyebrow: "Lecture supplement · Relational Model · pp. 5–17",
+    title: "Sets, ordering, and the model's origins",
+    body: `
+      <p>Dr. E. F. Codd of IBM Research proposed the relational model in 1970 in <em>A Relational Model for Large Shared Data Banks</em>, published in Communications of the ACM. His database work earned the ACM Turing Award.</p>
+      <p>Logical design depends on the data model. The lecture contrasts relational, object-relational, and NoSQL models, then focuses on relations.</p>
+      <ul>
+        <li>A relation is a <strong>set of tuples</strong>: no duplicate tuples and no inherent row order.</li>
+        <li>The lecture's formal tuple notation uses ordered values matching the schema's attribute positions.</li>
+        <li>In practice, identify columns by name; rearranging their display does not change the facts stored.</li>
+      </ul>
+      <div class="callout teal"><strong>SQL distinction</strong>SQL can return duplicate rows, and a query needs ORDER BY for a guaranteed result order. Those implementation details are distinct from the mathematical set model.</div>
+    `},
+  { id: "constraint-categories", type: "concept",
+    eyebrow: "Lecture supplement · Relational Model · pp. 28–38",
+    title: "Three kinds of constraints",
+    body: `
+      <p>Constraints define which data is permissible. Every valid database state must satisfy them.</p>
+      <ul>
+        <li><strong>Inherent / implicit:</strong> built into the model, such as atomic attribute values in the lecture's relational model.</li>
+        <li><strong>Schema-based / explicit:</strong> declared using the model's facilities, such as primary keys, foreign keys, and domains.</li>
+        <li><strong>Application-based / semantic:</strong> business rules beyond those facilities, enforced by application logic or other mechanisms.</li>
+      </ul>
+      <p>The four schema-based integrity constraints covered here are:</p>
+      <ol>
+        <li><strong>Key:</strong> no two rows may have the same key value or key combination.</li>
+        <li><strong>Entity integrity:</strong> no component of a primary key may be NULL.</li>
+        <li><strong>Referential integrity:</strong> non-NULL foreign keys reference existing keys.</li>
+        <li><strong>Domain:</strong> values must belong to the attribute's allowed set, or be NULL if permitted.</li>
+      </ol>
+      <div class="callout"><strong>Different failures, different rules</strong>A repeated ID violates key uniqueness. A missing PK component violates entity integrity. A nonexistent referenced item violates referential integrity. Text in a numeric-only Quantity column violates its domain.</div>
+    `},
+  { id: "database-schema-state", type: "concept",
+    eyebrow: "Lecture supplement · Relational Model · pp. 20–26, 51–54",
+    title: "From one relation to a whole database",
+    body: `
+      <div class="schema-line">R(A1, A2, ..., An)</div>
+      <p>R is a relation's name; A1 through An are its attributes. Each attribute has a domain: its allowed type, format, and any logical restrictions. A date domain might use YYYY-MM-DD; a U.S. phone-number domain specifies valid 10-digit numbers.</p>
+      <div class="schema-line">S = {R1, R2, ..., Rn}, with integrity constraints IC</div>
+      <p>A <strong>relational database schema</strong> describes all the relation schemas together with their integrity constraints.</p>
+      <div class="schema-line">DB = {r1, r2, ..., rn}</div>
+      <p>A <strong>database state</strong> contains the current state ri of each relation Ri. It is valid only when the stored data satisfies IC. INSERT, DELETE, and MODIFY (SQL UPDATE) change the state; they do not by themselves change the schema.</p>
+      <p>Table → relation; column header → attribute; possible values → domain; row → tuple; table definition → relation schema; populated table → relation state.</p>
+    `},
+  { id: "store-users-items", type: "concept",
+    eyebrow: "Worked data · user_item_example.txt · 1/3",
+    title: "First, store users and items",
+    body: `
+      <p>John Smith and Adam Sam are two users. Each product gets one Item row, regardless of how many times someone orders it.</p>
+      <table class="rel-table">
+        <caption>User</caption>
+        <thead><tr><th class="pk">Username</th><th>Password</th><th>Email</th></tr></thead>
+        <tbody><tr><td>John_Smith</td><td>sadfjh</td><td>jsmith@gmail.com</td></tr><tr><td>Adam_Sam</td><td>akjwiuh</td><td>asam@gmail.com</td></tr></tbody>
+      </table>
+      <p>The password strings are classroom placeholders, not secure password storage. Real systems store salted password hashes.</p>
+      <table class="rel-table">
+        <caption>Item (Desc abbreviates Description)</caption>
+        <thead><tr><th class="pk">ItemID</th><th>Desc</th><th>Name</th><th>Category</th><th>Rating</th><th>Price</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>toy</td><td>car</td><td>toys</td><td>4.3</td><td>$4</td></tr>
+          <tr><td>2</td><td>toy</td><td>ball</td><td>toys</td><td>4.9</td><td>$2</td></tr>
+          <tr><td>3</td><td>kids</td><td>bike</td><td>sports</td><td>3.9</td><td>$60</td></tr>
+        </tbody>
+      </table>
+      <p>Username is the chosen User key. ItemID is an added identifier because the original Item attributes were not designated keys.</p>
+    `},
+  { id: "store-orders-contains", type: "concept",
+    eyebrow: "Worked data · user_item_example.txt · 2/3",
+    title: "Then, connect orders to their items",
+    body: `
+      <p>John_Smith places order 10 for two balls and three toy cars. Adam_Sam places order 16 for one bike.</p>
+      <table class="rel-table">
+        <caption>Order</caption>
+        <thead><tr><th class="pk">OrderID</th><th>Address</th><th>Payment</th><th class="fk">Uname (FK)</th></tr></thead>
+        <tbody><tr><td>10</td><td>123 Main St</td><td>Visa</td><td>John_Smith</td></tr><tr><td>16</td><td>857 Ex St</td><td>Master Card</td><td>Adam_Sam</td></tr></tbody>
+      </table>
+      <table class="rel-table">
+        <caption>Contains: primary key = (OrderID, ItemID)</caption>
+        <thead><tr><th class="pk fk">OrderID (PK, FK)</th><th class="pk fk">ItemID (PK, FK)</th><th>Quantity</th></tr></thead>
+        <tbody><tr><td>10</td><td>2</td><td>2</td></tr><tr><td>10</td><td>1</td><td>3</td></tr><tr><td>16</td><td>3</td><td>1</td></tr></tbody>
+      </table>
+      <p>Contains.OrderID → Order.OrderID; Contains.ItemID → Item.ItemID; Order.Uname → User.Username.</p>
+      <p>In (10, 2, 2), the first 2 is the ball's <strong>ItemID</strong>; the second is <strong>Quantity</strong>. Order 10 needs two Contains rows, one per distinct item, not five rows for its five units.</p>
+      <div class="callout teal"><strong>Calculated from the sample prices</strong>Order 10: (2 × $2) + (3 × $4) = $16. Order 16: 1 × $60 = $60. These totals are derived, not extra columns in the supplied schema.</div>
+    `},
+  { id: "store-integrity", type: "concept",
+    eyebrow: "Worked data · Conversion transcript · 3/3",
+    title: "Which changes would the DBMS reject?",
+    body: `
+      <ul>
+        <li><strong>Contains(10, 6, 1):</strong> rejected by the ItemID FK. Item 6 does not exist.</li>
+        <li><strong>Another Contains(10, 2, 5):</strong> rejected by key uniqueness. The pair (10, 2) already exists; update its Quantity instead.</li>
+        <li><strong>Contains(10, NULL, 1):</strong> rejected by entity integrity. ItemID belongs to the composite PK, so it cannot be NULL.</li>
+        <li><strong>Order 17 with Uname = Unknown_User:</strong> rejected by the user FK. Referencing a username does not create that user.</li>
+      </ul>
+      <p>OrderID can repeat in Contains, and ItemID can repeat in other orders. Only the <strong>combination</strong> must be unique.</p>
+      <p>For this example, every order requires a user, so Order.Uname must also be NOT NULL. Populate User and Item first, Order after its User exists, and Contains after both its Order and Item exist.</p>
+      <div class="callout"><strong>Deleting referenced data</strong>Deleting a referenced item must not leave orphan Contains rows. With a restrictive FK the deletion is rejected; other explicitly configured actions, such as CASCADE, handle the dependent rows.</div>
+    `},
+  { id: "lecture-sources", type: "concept",
+    eyebrow: "Lecture references · Conversion checklist",
+    title: "Before creating the physical database",
+    body: `
+      <ol>
+        <li>Convert entities and select or add primary keys.</li>
+        <li>Convert relationships according to 1-1, 1-N, or N-M cardinality; preserve relationship attributes.</li>
+        <li>Map inheritance and union categories.</li>
+        <li>Split composite attributes and give multi-valued attributes their own tables.</li>
+        <li>Underline all PK components, identify every FK target, and check sample data against the constraints.</li>
+      </ol>
+      <p>Next comes physical design: create the actual tables from the logical schema.</p>
+      <p><strong>Sources supplied:</strong> Asmaa Elbadrawy's <em>The Relational Model</em> (60 slides) and <em>EER-D to Database Schema</em> (31 slides), ASU, 2020; the <em>Database Design Conversion</em> transcript and summary dated September 16, 2026; and <em>user_item_example.txt</em>.</p>
+      <p>The COMPANY schema in the slides is credited to Elmasri et al. The worked store data follows the supplied text file where the spoken transcript varies. SQL enforcement details are labeled as implementation notes.</p>
     `},
   { id: "glossary", type: "glossary" },
   { id: "quiz", type: "quiz" },
@@ -733,11 +890,11 @@ const quizQuestions = [
     opts: [
       "It's never allowed to be NULL",
       "The referenced table is empty",
-      "That FK is not part of its own table's primary key",
+      "The schema permits NULL and the FK is not part of its own primary key",
       "The referencing table has no primary key"
     ],
     correct: 2,
-    why: "NULL is fine for a FK unless that same attribute is also (part of) the primary key of its own table — that would break entity integrity." },
+    why: "Both conditions matter: the schema must allow NULL, and the FK cannot be a component of its own table's primary key. A NOT NULL constraint can prohibit NULL even for a non-PK foreign key." },
   { q: "Converting a 1-N relationship to a schema, where does the foreign key go?",
     opts: ["On the One side's table", "On the Many side's table", "In a brand-new table", "It isn't needed"],
     correct: 1,
@@ -775,57 +932,139 @@ const quizQuestions = [
       ["Relation Schema", "The description of a relation."],
       ["Relation State", "It holds the current state of a relation showing instances stored in it."],
       ["Relational Database Schema", "The description of a relational database showing its tables, attributes, etc."],
-      ["Relational Database State", "The current state of a relationsal database showing all data instances stored in tables"],
-      ["Primary Key", "A special column that has a unique value associated with each tuple and acts as an identifier for the whole tuple"],
-      ["Foreign Key", "A special column in one table that references a primary key in another table."]
+      ["Relational Database State", "The current snapshot of all data instances stored in the database's tables."],
+      ["Primary Key", "The chosen candidate key: one or more attributes that uniquely identify each tuple and cannot be NULL."],
+      ["Foreign Key", "One or more attributes referencing a key in another table or the same table."]
     ],
     why: "Relation and database schemas are descriptions; relation and database states show what is currently stored. Primary keys identify tuples, and foreign keys reference primary keys in another table." },
   { type: "multi-select",
-    q: "Entity integrity is ensured via:",
+    q: "Which statements describe primary-key selection and entity integrity in this lecture?",
     opts: [
       "selecting one candidate key to become the primary key of the table.",
       "ensuring there are no null values in the tables",
       "ensuring all columns have unique values for all rows/tuples",
-      "not allowing duplicate tuples/rows in a relation/table"
+      "not allowing NULL in any component of the primary key"
     ],
     correct: [0, 3],
-    why: "Entity integrity requires selecting a primary key and treating a relation as a set, so duplicate tuples are not allowed. NULL is prohibited only in primary-key attributes, and uniqueness is required only for key attributes." },
+    why: "The lecture requires choosing a primary key and prohibiting NULL in every PK component. Key constraints enforce uniqueness; entity integrity addresses missing identifiers. Other columns may allow NULL or repeated values." },
   { type: "multi-select",
     q: "Choose everything that applies to referential integrity:",
     opts: [
       "it ensures that data is referenced properly across tables.",
       "it ensures that no referencing is allowed between tables to reduce redundancy.",
       "It allows for adding new primary key values in the referenced table by specifying them in the foreign key column in the referencing table.",
-      "it ensures that a foreign key value in the referencing table must match a primary key value in the referenced table."
+      "it ensures that a non-NULL foreign key value must match an existing referenced key."
     ],
     correct: [0, 3],
-    why: "Referential integrity ensures foreign-key values properly reference existing primary-key values across tables." },
+    why: "Non-NULL foreign-key values must reference existing keys; they do not create parent rows. NULL is possible only when the schema allows it and the FK is not part of its own primary key." },
+  { q: "Who proposed the relational model in 1970?",
+    opts: ["E. F. Codd of IBM Research", "The MySQL development team", "The NoSQL community", "The authors of the EER-to-schema slides"],
+    correct: 0,
+    why: "Codd introduced the model in his 1970 Communications of the ACM paper, A Relational Model for Large Shared Data Banks." },
+  { q: "Which statement about a relation's tuples is correct?",
+    opts: ["They have a permanent row order", "They form an unordered set with no duplicate tuples", "They must be sorted by primary key", "They are its column definitions"],
+    correct: 1,
+    why: "Relations are sets of tuples, so row order has no meaning and duplicate tuples are excluded. Ordered values within a formal tuple are a different idea." },
+  { q: "SerialNo alone uniquely identifies every CAR. What is {SerialNo, Make}?",
+    opts: ["A foreign key", "A minimal candidate key", "A superkey, but not a candidate key", "Not a superkey"],
+    correct: 2,
+    why: "The set remains unique, but Make is removable. Candidate keys must be minimal superkeys." },
+  { type: "matching",
+    q: "Match each constraint category to its example.",
+    pairs: [
+      ["Inherent / implicit", "The relational model's atomic-value rule."],
+      ["Schema-based / explicit", "A declared foreign key from Order.Uname to User.Username."],
+      ["Application-based / semantic", "A business rule beyond the schema facilities, checked by application logic."]
+    ],
+    why: "Implicit rules belong to the model; explicit rules are declared in the schema; semantic rules need enforcement beyond those facilities." },
+  { q: "Quantity accepts only positive integers. Which rule rejects the text 'several'?",
+    opts: ["Referential integrity", "Entity integrity", "Key uniqueness", "Domain constraint"],
+    correct: 3,
+    why: "A domain defines the permitted values for an attribute. The text does not belong to the stated Quantity domain." },
+  { q: "Updating the Quantity in an existing Contains row changes what?",
+    opts: ["The database state", "The relation's attribute names", "The EER cardinality", "The database schema"],
+    correct: 0,
+    why: "UPDATE changes stored data, so it changes the state. The table definitions and constraints remain the same." },
+  { q: "In Contains(OrderID, ItemID, Quantity), what does (10, 2, 2) mean?",
+    opts: ["User 10 placed two orders", "Order 10 contains two units of item 2, the ball", "Item 10 belongs to order 2", "Order 10 costs $2"],
+    correct: 1,
+    why: "The positions match OrderID, ItemID, and Quantity. Item 2 is the toy ball; its ID and this row's quantity happen to be the same number." },
+  { q: "How many Contains rows represent order 10's two balls and three toy cars?",
+    opts: ["One", "Five", "Two", "Three"],
+    correct: 2,
+    why: "There is one row per distinct order/item pair: (10, 2, 2) and (10, 1, 3). Quantity counts units within each pair." },
+  { q: "Why is inserting Contains(10, 6, 1) invalid for the supplied data?",
+    opts: ["Order 10 does not exist", "Quantity 1 is never allowed", "OrderID cannot repeat", "Item 6 does not exist in Item"],
+    correct: 3,
+    why: "ItemID is a foreign key. Only item IDs 1, 2, and 3 exist in this example; the insertion violates referential integrity." },
+  { type: "multi-select",
+    q: "The supplied Contains table already includes (10, 2, 2). Which statements are true?",
+    opts: [
+      "Another row with OrderID 10 and ItemID 2 would duplicate the primary key.",
+      "OrderID 10 may occur with a different ItemID.",
+      "ItemID can be NULL because it is a foreign key.",
+      "Quantity is part of the supplied primary key."
+    ],
+    correct: [0, 1],
+    why: "The PK is (OrderID, ItemID). Individual components may repeat, but the pair cannot, and neither component may be NULL." },
+  { q: "Using the sample prices, what is order 10's total before tax or shipping?",
+    opts: ["$16", "$60", "$10", "$6"],
+    correct: 0,
+    why: "Two balls at $2 plus three toy cars at $4: 2 × 2 + 3 × 4 = $16. This is a derived total, not a field in the supplied schema." },
+  { q: "Where does BookID go in the illustrated table-per-entity inheritance mapping?",
+    opts: ["Only in Book_Copy", "In each subclass as a FK to Book, also used as its PK", "Only in the superclass with no links", "In a comma-separated subclass list"],
+    correct: 1,
+    why: "Paper_Book.BookID and Electronic_Book.BookID reference Book.BookID. Sharing the identifier links each subclass record to its superclass record." },
+  { q: "Which table receives EBID and PBID in the lecture's union mapping?",
+    opts: ["Only E_Book", "Only Paper_Book", "Book_Copy", "Contains"],
+    correct: 2,
+    why: "Book_Copy has its own BCID primary key and foreign keys to the possible source types. For the either/or example, an additional constraint enforces exactly one populated FK." },
+  { q: "How does the composite Name attribute map to Student columns?",
+    opts: ["A new table for every first name", "A list of name parts in one cell", "Only a Name column with no parts", "First_name, Middle_initial, and Last_name columns"],
+    correct: 3,
+    why: "Create one column per component, without an extra column for the composite Name itself." },
+  { q: "What additional constraint enforces a one-to-one maximum when using a foreign key?",
+    opts: ["UNIQUE on the foreign key", "Allow all values to be NULL", "Store multiple IDs in the FK", "Remove the referenced primary key"],
+    correct: 0,
+    why: "Implementation detail: an ordinary FK permits many references to one parent. UNIQUE (or using the FK as the PK) limits each referenced value to one row." },
 ];
 
 const glossary = [
-  ["Relation", "A table with special properties: atomic values, ordered/unique rows called tuples. Not the same as a \u201Crelationship.\u201D"],
+  ["Relation", "A set of unique, unordered rows called tuples, with atomic attribute values. Not the same as a \u201Crelationship.\u201D"],
   ["Tuple", "A row in a relation — one instance of an entity or relationship."],
   ["Attribute", "A column in a relation — a property of the entity/relationship."],
   ["Domain", "The set of legal values (data type + format) for an attribute."],
   ["Schema (of a relation)", "The table's name plus its attribute list, e.g. Employee(SSN, Name, Address, Salary)."],
   ["State (of a relation)", "The actual set of rows in a table right now — a snapshot that changes with every insert/delete/update."],
-  ["Superkey", "Any set of attributes with no duplicate values across all rows."],
+  ["Superkey", "A set of attributes whose combined values uniquely identify each row in every valid state."],
   ["Key", "A minimal superkey — removing any attribute breaks its uniqueness."],
   ["Primary key", "The key chosen to officially identify rows; its attributes are underlined in a schema."],
   ["Surrogate key", "An artificial, assigned ID used when no natural key attribute exists."],
   ["Entity integrity", "Every table must have a primary key, and PK attributes can never be NULL."],
-  ["Referential integrity", "A foreign key value must match an existing PK value in the referenced table, or be NULL."],
-  ["Foreign key (FK)", "An attribute in one table that references the primary key of another table."],
+  ["Referential integrity", "A non-NULL foreign key must match an existing referenced key. NULL is allowed only if the schema permits it and the FK is not part of its own primary key."],
+  ["Foreign key (FK)", "One or more attributes referencing a key in another table or the same table; the lecture's schema arrows point from FK to PK."],
   ["Cardinality (1-1, 1-N, N-M)", "How many instances on each side of a relationship can match: one, many, or many-to-many."],
   ["1-N conversion rule", "Add a FK column to the table on the Many side, referencing the primary key of the One side."],
   ["N-M conversion rule", "Create a brand-new table with FKs to both related entities; those combined FKs become its primary key."],
   ["Superclass / subclass", "A superclass is the general entity (e.g. Book); subclasses are its specific types (e.g. Paper Book, Electronic Book)."],
   ["Inheritance conversion rule", "One table per entity (super + sub); each subclass table gets a FK referencing the superclass's primary key."],
   ["Union / category", "A relationship shape where one entity can relate to one of several different types (e.g. a Book Copy is either an E-Book or a Paper-Book)."],
-  ["Union conversion rule", "Put one FK per possible type in the main category table; only the matching FK is filled in per row, the rest are NULL."],
+  ["Union conversion rule", "In the lecture's mapping, put one FK per possible source type in the category table. Its either/or example requires exactly one populated FK, enforced separately."],
   ["Composite attribute", "One conceptual attribute made of multiple parts (e.g. Address → Street, City, State, Zip)."],
   ["Multi-valued attribute", "An attribute that can hold more than one value for a single entity instance (e.g. a Department's Locations)."],
   ["Multi-valued conversion rule", "Create a new table with a FK back to the original entity; each value becomes its own row."],
+  ["Candidate key", "Any minimal superkey eligible to be chosen as the primary key. A table may have several."],
+  ["Composite key", "A key made of more than one attribute. The combination, not each individual component, must be unique."],
+  ["NULL", "A marker for unknown, unavailable, or inapplicable data, allowed only where the schema permits it. Not zero or empty text."],
+  ["Domain constraint", "Each value must belong to the attribute's allowed domain, or be NULL if permitted."],
+  ["Key constraint", "No two tuples may have the same value or combination of values for a key."],
+  ["Inherent / implicit constraint", "A rule built into the data model itself, such as atomic values in the lecture's relational model."],
+  ["Schema-based / explicit constraint", "A rule expressed in the schema using the model's facilities, such as a declared primary key or foreign key."],
+  ["Application-based / semantic constraint", "A business rule beyond the model's schema facilities, requiring application logic or other enforcement."],
+  ["Relational database schema", "The set of relation schemas S = {R1, ..., Rn} together with integrity constraints IC."],
+  ["Relational database state", "The collection of all current relation states. Also called a database snapshot or instance; valid only if all constraints hold."],
+  ["Junction / associative table", "A table representing a many-to-many relationship, such as Contains(OrderID, ItemID, Quantity)."],
+  ["1-1 conversion rule", "Place a FK in either table, usually the total-participation side. In implementation, enforce uniqueness and any required non-NULL participation."],
 ];
 
 /* ---------------- state ---------------- */
@@ -901,12 +1140,12 @@ function renderWelcome() {
     <div class="center-flow">
       <div class="eyebrow">IFT 200 · Modules 4 & 5</div>
       <h2 style="font-size:28px; margin-bottom:10px;">The Relational Model → EER-to-Schema</h2>
-      <p style="font-size:15px; color:var(--ink-soft); margin-bottom:16px;">Built from both lecture transcripts + textbook Ch. 5. One idea per screen, nothing to scroll past.</p>
+      <p style="font-size:15px; color:var(--ink-soft); margin-bottom:16px;">Relational concepts, integrity constraints, and logical database design.</p>
       <div class="chip-row">
-        <span class="chip">20 concept cards</span>
+        <span class="chip">${conceptCount()} concept cards</span>
         <span class="chip">glossary flashcards</span>
-        <span class="chip">9-question check</span>
-        <span class="chip">~22 min</span>
+        <span class="chip">${quizQuestions.length}-question check</span>
+        <span class="chip">worked store data</span>
       </div>
       <div class="callout"><strong>There is no catching up</strong>Pick the smallest next step. Everything saves automatically, including the cards that need another look.</div>
       <div class="mission-grid">
@@ -951,6 +1190,15 @@ function renderConcept(step) {
     </div>
     ${reviewMode ? '<p class="review-note">Review card ' + (reviewQueue.indexOf(step.id) + 1) + ' of ' + reviewQueue.length + '.</p>' : ''}
   `;
+  cardHost.querySelectorAll(".rel-table").forEach(table => {
+    const wrapper = document.createElement("div");
+    wrapper.className = "table-scroll";
+    wrapper.tabIndex = 0;
+    wrapper.setAttribute("role", "region");
+    wrapper.setAttribute("aria-label", table.caption ? table.caption.textContent : "Data table");
+    table.before(wrapper);
+    wrapper.appendChild(table);
+  });
   cardHost.querySelectorAll("[data-state]").forEach(button => {
     button.onclick = () => {
       const nextState = button.dataset.state;
