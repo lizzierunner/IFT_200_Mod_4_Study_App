@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IFT 200 · Modules 4-5 · Relational Model & EER-to-Schema</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F4EFE3;
+    --card: #FBF8F0;
+    --ink: #22201B;
+    --ink-soft: #5C574B;
+    --line: #DCD4C0;
+    --navy: #2B3A55;
+    --navy-soft: #EAEDF3;
+    --amber: #D98C2B;
+    --amber-soft: #FBEBD3;
+    --teal: #2F6F63;
+    --teal-soft: #E3F0EC;
+    --danger: #B4483A;
+    --danger-soft: #F7E4E0;
+    --radius: 14px;
+    --shadow: 0 1px 0 rgba(34,32,27,0.06);
+    color-scheme: light;
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --paper: #1B1912;
+      --card: #24211A;
+      --ink: #ECE6D6;
+      --ink-soft: #B2AB97;
+      --line: #3B3728;
+      --navy: #9AB0D9;
+      --navy-soft: #262C3A;
+      --amber: #F0AE52;
+      --amber-soft: #3A2E17;
+      --teal: #6FBBA9;
+      --teal-soft: #16302A;
+      --danger: #E38A7B;
+      --danger-soft: #3A2119;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #1B1912;
+    --card: #24211A;
+    --ink: #ECE6D6;
+    --ink-soft: #B2AB97;
+    --line: #3B3728;
+    --navy: #9AB0D9;
+    --navy-soft: #262C3A;
+    --amber: #F0AE52;
+    --amber-soft: #3A2E17;
+    --teal: #6FBBA9;
+    --teal-soft: #16302A;
+    --danger: #E38A7B;
+    --danger-soft: #3A2119;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 20px 14px 60px;
+  }
+  .shell {
+    width: 100%;
+    max-width: 640px;
+  }
+
+  h1, h2, h3 {
+    font-family: "Space Grotesk", -apple-system, sans-serif;
+    margin: 0;
+    line-height: 1.15;
+  }
+  code, .mono {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+  }
+
+  /* ---------- top bar ---------- */
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .topbar .label {
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+  .topbar .win-count {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    color: var(--teal);
+    white-space: nowrap;
+  }
+  .progress-track {
+    flex: 1;
+    height: 8px;
+    background: var(--line);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--amber);
+    width: 0%;
+    transition: width 0.35s ease;
+    border-radius: 99px;
+  }
+
+  /* ---------- cards ---------- */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 26px 24px;
+    min-height: 420px;
+    display: flex;
+    flex-direction: column;
+  }
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    color: var(--navy);
+    margin-bottom: 8px;
+  }
+  .card h2 {
+    font-size: 24px;
+    margin-bottom: 14px;
+  }
+  .card-body {
+    font-size: 15.5px;
+    line-height: 1.55;
+    color: var(--ink);
+    flex: 1;
+  }
+  .card-body p { margin: 0 0 12px; }
+  .card-body ul { margin: 0 0 12px; padding-left: 20px; }
+  .card-body li { margin-bottom: 6px; }
+  .callout {
+    background: var(--amber-soft);
+    border-left: 3px solid var(--amber);
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin: 14px 0;
+    font-size: 14.5px;
+  }
+  .callout.teal {
+    background: var(--teal-soft);
+    border-left-color: var(--teal);
+  }
+  .callout.watch {
+    background: var(--danger-soft);
+    border-left-color: var(--danger);
+  }
+  .callout strong { display: block; margin-bottom: 2px; font-size: 12.5px; text-transform: none; color: inherit; }
+
+  /* schema table visuals */
+  .rel-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 13.5px;
+  }
+  .rel-table caption {
+    text-align: left;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  .rel-table th, .rel-table td {
+    border: 1px solid var(--line);
+    padding: 7px 9px;
+    text-align: left;
+  }
+  .rel-table th {
+    background: var(--navy-soft);
+    font-family: "IBM Plex Mono", monospace;
+    font-weight: 600;
+    font-size: 12.5px;
+  }
+  .rel-table th.pk { text-decoration: underline; text-decoration-color: var(--amber); text-decoration-thickness: 2px; }
+  .rel-table th.fk { color: var(--teal); }
+
+  .schema-line {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 14px;
+    background: var(--navy-soft);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin: 10px 0;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .schema-line .pk { text-decoration: underline; text-decoration-color: var(--amber); text-decoration-thickness: 2px; }
+  .schema-line .fk-text, .fk-text { color: var(--teal); font-weight: 600; }
+  ol { margin: 0 0 12px; padding-left: 20px; }
+  ol li { margin-bottom: 6px; }
+
+  /* nav row */
+  .nav-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 18px;
+  }
+  button {
+    font-family: inherit;
+    font-size: 14.5px;
+    font-weight: 600;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    padding: 11px 16px;
+    cursor: pointer;
+    background: var(--card);
+    color: var(--ink);
+  }
+  .btn-primary {
+    background: var(--navy);
+    color: var(--paper);
+    border-color: var(--navy);
+    flex: 1;
+  }
+  .btn-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .btn-ghost { background: transparent; }
+  .btn-got-it {
+    align-self: flex-start;
+    margin-top: 10px;
+    font-size: 13px;
+    padding: 8px 12px;
+    border-radius: 8px;
+  }
+  .btn-got-it.done {
+    background: var(--teal-soft);
+    border-color: var(--teal);
+    color: var(--teal);
+  }
+  .understanding-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .understanding-actions button {
+    font-size: 13px;
+    padding: 8px 11px;
+  }
+  .btn-review {
+    background: var(--amber-soft);
+    border-color: var(--amber);
+  }
+  .btn-confusing {
+    background: var(--danger-soft);
+    border-color: var(--danger);
+  }
+  .review-note {
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .mission-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .mission {
+    min-height: 78px;
+    text-align: left;
+    padding: 11px;
+    border-radius: 8px;
+    background: var(--navy-soft);
+  }
+  .mission strong, .mission span { display: block; }
+  .mission strong { font-size: 13px; }
+  .mission span { margin-top: 3px; font-size: 11.5px; font-weight: 500; color: var(--ink-soft); }
+  .mission.review { background: var(--amber-soft); border-color: var(--amber); }
+  .focus-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 0 0 14px;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--teal-soft);
+    font-size: 12px;
+  }
+  .focus-strip strong { font-family: "IBM Plex Mono", monospace; }
+  .focus-strip button { padding: 5px 8px; font-size: 11.5px; }
+  .win-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    z-index: 2;
+    transform: translate(-50%, 12px);
+    padding: 9px 13px;
+    border-radius: 8px;
+    background: var(--teal);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  .win-toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  /* dots */
+  .dots {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--line);
+  }
+  .dot.active { background: var(--navy); width: 16px; border-radius: 4px; }
+  .dot.done { background: var(--amber); }
+
+  /* welcome + summary screens */
+  .center-flow {
+    text-align: left;
+  }
+  .chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 16px 0;
+  }
+  .chip {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    border: 1px solid var(--line);
+    border-radius: 99px;
+    padding: 5px 11px;
+    color: var(--ink-soft);
+  }
+
+  /* flashcard glossary */
+  .flash {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    background: var(--card);
+  }
+  .flash .term {
+    font-family: "IBM Plex Mono", monospace;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--navy);
+  }
+  .flash .def {
+    display: none;
+    margin-top: 8px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+  }
+  .flash.open .def { display: block; }
+  .flash .hint { font-size: 11.5px; color: var(--ink-soft); margin-top: 4px; }
+
+  /* quiz */
+  .quiz-q { font-size: 16px; font-weight: 600; margin-bottom: 14px; }
+  .opt {
+    display: block;
+    width: 100%;
+    text-align: left;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 11px 13px;
+    margin-bottom: 8px;
+    background: var(--card);
+    font-size: 14.5px;
+    font-weight: 500;
+  }
+  .opt.correct { background: var(--teal-soft); border-color: var(--teal); }
+  .opt.wrong { background: var(--danger-soft); border-color: var(--danger); }
+  .opt:disabled { cursor: default; }
+  .quiz-feedback { margin-top: 10px; font-size: 14px; }
+  .quiz-score {
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 38px;
+    font-weight: 700;
+  }
+  .match-list { display: grid; gap: 9px; }
+  .match-row {
+    padding: 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--navy-soft);
+  }
+  .match-row label { display: block; margin-bottom: 7px; font-family: "IBM Plex Mono", monospace; font-size: 12px; font-weight: 600; }
+  .match-row select { width: 100%; padding: 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--ink); font: inherit; font-size: 13px; }
+  .match-row.correct { border-color: var(--teal); background: var(--teal-soft); }
+  .match-row.wrong { border-color: var(--danger); background: var(--danger-soft); }
+  .multi-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 8px;
+    padding: 11px 13px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--card);
+    font-size: 14.5px;
+  }
+  .multi-option input { width: 18px; height: 18px; margin: 1px 0 0; accent-color: var(--teal); }
+  .multi-option.correct { background: var(--teal-soft); border-color: var(--teal); }
+  .multi-option.wrong { background: var(--danger-soft); border-color: var(--danger); }
+
+  .footnote {
+    text-align: center;
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-top: 16px;
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <div class="topbar">
+    <span class="label mono" id="stepLabel">0 / 0</span>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="win-count" id="winCount">0 tiny wins</span>
+  </div>
+
+  <div class="card" id="cardHost"></div>
+
+  <div class="nav-row" id="navRow" style="display:none">
+    <button class="btn-ghost" id="backBtn">← Back</button>
+    <button class="btn-primary" id="nextBtn">Next →</button>
+  </div>
+
+  <div class="dots" id="dots"></div>
+  <div class="win-toast" id="winToast" role="status" aria-live="polite"></div>
+
+</div>
+
+<script>
+/* ---------------- content model ---------------- */
+const STORAGE_KEY = "ift200-m4m5-progress-v2";
+
+const steps = [
+  { id: "welcome", type: "welcome" },
+  { id: "big-picture", type: "concept",
+    eyebrow: "Mod 4 · 1/10 · The big picture",
+    title: "Where this video fits",
+    body: `
+      <p>The database design process has three stages. You already finished stage one.</p>
+      <ul>
+        <li><strong>Conceptual design</strong> — done. This is your ER / EER diagram.</li>
+        <li><strong>Logical design</strong> — this video. You convert the EER diagram into a <span class="mono">database schema</span>.</li>
+        <li><strong>Physical design</strong> — later. Actually creating the tables on disk (MySQL).</li>
+      </ul>
+      <div class="callout"><strong>One thing to remember</strong>Logical design depends on which database model you're using. This course uses the <strong>relational model</strong> — the classic, most widely used one.</div>
+    `},
+  { id: "what-is-relation", type: "concept",
+    eyebrow: "Mod 4 · 2/10 · Core vocabulary",
+    title: "What is a \u201Crelation\u201D?",
+    body: `
+      <p>A <strong>relation</strong> is just a table with special rules. That's it.</p>
+      <div class="callout watch"><strong>Watch out — this trips people up</strong>"Relation" ≠ "relationship." A <em>relationship</em> is an interaction between entities (ER model). A <em>relation</em> is a table (relational model). Same course, two different words.</div>
+      <p>A relation contains a set of rows. Each row stores facts about one entity or one relationship instance from your conceptual design.</p>
+    `},
+  { id: "anatomy", type: "concept",
+    eyebrow: "Mod 4 · 3/10 · Structure",
+    title: "Rows and columns have names",
+    body: `
+      <p>In the relational model, ordinary table words get formal names:</p>
+      <ul>
+        <li>A <strong>row</strong> is called a <span class="mono">tuple</span> — one instantiation of an entity/relationship.</li>
+        <li>A <strong>column</strong> is called an <span class="mono">attribute</span> — a property of that entity/relationship.</li>
+      </ul>
+      <table class="rel-table">
+        <caption>STUDENT relation</caption>
+        <thead><tr><th class="pk">Name</th><th>Ssn</th><th>Home_phone</th><th>Address</th><th>Gpa</th></tr></thead>
+        <tbody>
+          <tr><td>Benjamin Bayer</td><td>305-61-2435</td><td>373-1616</td><td>2918 Bluebonnet Ln</td><td>3.21</td></tr>
+          <tr><td>Chung-cha Kim</td><td>381-62-1245</td><td>375-4409</td><td>125 Kirby Rd</td><td>2.89</td></tr>
+        </tbody>
+      </table>
+      <p>Each row above = one tuple. Each column header = one attribute.</p>
+    `},
+  { id: "atomic", type: "concept",
+    eyebrow: "Mod 4 · 4/10 · A rule for every cell",
+    title: "Values must be atomic",
+    body: `
+      <p>Every cell in a relation holds exactly <strong>one indivisible value</strong> — never a list, never multiple values stuffed together.</p>
+      <p>Each value also has to come from the right <span class="mono">domain</span> — the data type and format allowed for that column.</p>
+      <div class="callout teal"><strong>Example domains</strong>SSN → 9 digits, formatted ###-##-####. Phone → 10 digits. Age → a positive integer.</div>
+      <p>A cell can also be <strong>NULL</strong> — meaning unknown, not available, or not applicable for that row.</p>
+    `},
+  { id: "keys", type: "concept",
+    eyebrow: "Mod 4 · 5/10 · Identity",
+    title: "Key attributes give rows identity",
+    body: `
+      <p>Every table needs some column (or combo of columns) whose value is <strong>unique for every row</strong>. That's how the database tells rows apart.</p>
+      <ul>
+        <li><strong>Superkey</strong> — any set of attributes with no duplicate values across rows.</li>
+        <li><strong>Key</strong> — a <em>minimal</em> superkey. Remove any attribute from it and it stops being unique.</li>
+        <li><strong>Primary key</strong> — the one key you pick (out of possibly several candidates) to officially identify rows.</li>
+      </ul>
+      <div class="schema-line">CAR(<span class="pk">State, Reg#</span>, SerialNo, Make, Model, Year)</div>
+      <p>Here {State, Reg#} and {SerialNo} are both keys. You'd pick one as primary — usually the one with fewer attributes.</p>
+      <div class="callout"><strong>No natural key?</strong>Assign a made-up row ID. That's called a <span class="mono">surrogate key</span> (or artificial key).</div>
+    `},
+  { id: "schema", type: "concept",
+    eyebrow: "Mod 4 · 6/10 · Notation",
+    title: "Writing a relation schema",
+    body: `
+      <p>A <span class="mono">schema</span> is just the description of a table: its name plus its attribute list.</p>
+      <div class="schema-line">Employee(<span class="pk">SSN</span>, Name, Address, Salary)</div>
+      <p>Primary key attributes get <span style="text-decoration:underline; text-decoration-color:var(--amber); text-decoration-thickness:2px;">underlined</span>. A single row in this table would be written as a <span class="mono">tuple</span> in angle brackets:</p>
+      <div class="schema-line">&lt;632-89-5342, "John Smith", "101 Main St", 75000&gt;</div>
+      <p>That's a "4-tuple" — four values, one per attribute.</p>
+    `},
+  { id: "state", type: "concept",
+    eyebrow: "Mod 4 · 7/10 · Snapshot in time",
+    title: "Schema vs. state — don't mix these up",
+    body: `
+      <ul>
+        <li><strong>Schema</strong> — the structure. Fixed. Rarely changes. Employee(SSN, Name, Address, Salary).</li>
+        <li><strong>State</strong> — the actual rows sitting in the table <em>right now</em>. Changes constantly.</li>
+      </ul>
+      <p>A relational database <strong>state</strong> is just the collection of all your tables' current row-sets at once — also called a <em>snapshot</em>. It changes with every INSERT, DELETE, or UPDATE.</p>
+      <div class="callout watch"><strong>Invalid state</strong>If a change ever breaks a constraint (next two cards), the resulting state is invalid — not allowed.</div>
+    `},
+  { id: "entity-integrity", type: "concept",
+    eyebrow: "Mod 4 · 8/10 · Constraint #1",
+    title: "Entity integrity",
+    body: `
+      <p>Two rules, always together:</p>
+      <ul>
+        <li>Every table <strong>must have</strong> a primary key.</li>
+        <li>Primary key attributes can <strong>never be NULL</strong> — on any row.</li>
+      </ul>
+      <p>Makes sense: if the ID is missing, you can't tell rows apart at all. That defeats the entire point of a key.</p>
+      <div class="callout"><strong>How it shows up in a schema diagram</strong>The primary key is underlined. That underline <em>is</em> the entity integrity constraint, visually.</div>
+    `},
+  { id: "referential-integrity", type: "concept",
+    eyebrow: "Mod 4 · 9/10 · Constraint #2",
+    title: "Referential integrity (foreign keys)",
+    body: `
+      <p>This one involves <strong>two tables</strong> — a referencing table and a referenced table.</p>
+      <table class="rel-table">
+        <caption>CAR (referenced table)</caption>
+        <thead><tr><th class="pk">SerialNo</th><th>State</th></tr></thead>
+        <tbody><tr><td>J849H843</td><td>AZ</td></tr></tbody>
+      </table>
+      <table class="rel-table">
+        <caption>DRIVER (referencing table)</caption>
+        <thead><tr><th>License#</th><th class="fk">SerialNo (FK)</th></tr></thead>
+        <tbody><tr><td>D32484739</td><td>J849H843</td></tr></tbody>
+      </table>
+      <p>The <span class="mono">SerialNo</span> in DRIVER is a <strong>foreign key</strong> — it points to the primary key of the same name in CAR. A foreign key value must either:</p>
+      <ul>
+        <li>match an existing primary key value in the referenced table, <strong>or</strong></li>
+        <li>be NULL (only allowed if that FK isn't also part of this table's own primary key).</li>
+      </ul>
+      <p>On a schema diagram, this is drawn as an arrow from the FK to the PK it references.</p>
+    `},
+  { id: "putting-together", type: "concept",
+    eyebrow: "Mod 4 · 10/10 · Full picture",
+    title: "The COMPANY database schema",
+    body: `
+      <p>Zoom out — this is what a finished logical design looks like. Every underline is entity integrity. Every arrow (implied here by the FK label) is referential integrity.</p>
+      <div class="schema-line">Employee(<span class="pk">Ssn</span>, Fname, Lname, Bdate, Address, Super_ssn, Dno)</div>
+      <div class="schema-line">Department(<span class="pk">Dnumber</span>, Dname, Mgr_ssn)</div>
+      <div class="schema-line">Project(<span class="pk">Pnumber</span>, Pname, Plocation, Dnum)</div>
+      <div class="schema-line">Works_on(<span class="pk">Essn, Pno</span>, Hours)</div>
+      <p>Employee.Dno → Department.Dnumber. Project.Dnum → Department.Dnumber. Works_on.Essn → Employee.Ssn. That's the whole idea, just repeated per relationship.</p>
+      <div class="callout teal"><strong>Next up</strong>The actual step-by-step process for converting an EER diagram into a schema like this one — that's Module 5, right after this card.</div>
+    `},
+  { id: "eer-overview", type: "concept",
+    eyebrow: "Mod 5 · 1/10 · The bigger process",
+    title: "Where EER-to-schema fits",
+    body: `
+      <p>Zoom out one more level — the full database design process has four stages:</p>
+      <ul>
+        <li><strong>Collect requirements</strong> — figure out what data you need to store.</li>
+        <li><strong>Conceptual design</strong> — build the EER diagram: entities, attributes, relationships.</li>
+        <li><strong>Logical design</strong> — convert that EER diagram into a database schema. <em>This is what Module 5 covers.</em></li>
+        <li><strong>Physical design</strong> — create the actual tables on disk.</li>
+      </ul>
+      <div class="callout"><strong>Running example this module</strong>An online store: a <span class="mono">User</span> places <span class="mono">Orders</span>, each order contains one or more <span class="mono">Items</span>.</div>
+    `},
+  { id: "eer-entities", type: "concept",
+    eyebrow: "Mod 5 · 2/10 · Rule 1",
+    title: "Entities → one table each",
+    body: `
+      <p>For every entity in your EER diagram:</p>
+      <ol style="margin:0 0 12px; padding-left:20px;">
+        <li>Pick a primary key. If the entity has several key attributes, choose one. If it has none, invent a surrogate ID.</li>
+        <li>Create one table schema for that entity, with that primary key.</li>
+      </ol>
+      <div class="schema-line">User(<span class="pk">Username</span>, Password, Email)</div>
+      <div class="schema-line">Item(<span class="pk">ItemID</span>, Description, Name, Category, Rating, Price)</div>
+      <div class="schema-line">Order(<span class="pk">OrderID</span>, Address, Payment)</div>
+      <p>Three entities in the EER diagram → three tables, straight across. No relationships handled yet — that's next.</p>
+    `},
+  { id: "eer-1n", type: "concept",
+    eyebrow: "Mod 5 · 3/10 · Cardinality: 1-N",
+    title: "1-to-Many relationships",
+    body: `
+      <p>In a 1-N relationship, one side has exactly one match; the other can have many. Example: each Order was placed by exactly one User, but a User can place many Orders.</p>
+      <div class="callout"><strong>The rule</strong>Add an extra column — a foreign key — to the table on the <strong>Many</strong> side, referencing the primary key of the <strong>One</strong> side.</div>
+      <div class="schema-line">Order(<span class="pk">OrderID</span>, Address, Payment, <span class="fk-text">Uname</span>)</div>
+      <p>Order.Uname is a foreign key pointing at User.Username. If the relationship itself had attributes, those columns would also go on the Many side's table.</p>
+    `},
+  { id: "eer-11", type: "concept",
+    eyebrow: "Mod 5 · 4/10 · Cardinality: 1-1",
+    title: "1-to-1 is just a special case",
+    body: `
+      <p>A 1-1 relationship is a 1-N relationship where N happens to equal 1. Same rule applies.</p>
+      <p>The one difference: since both sides only ever match one row, you get to choose <strong>either</strong> table to hold the foreign key — it doesn't have to be one particular side, because there's no "Many" side to force the choice.</p>
+    `},
+  { id: "eer-nm", type: "concept",
+    eyebrow: "Mod 5 · 5/10 · Cardinality: N-M",
+    title: "Many-to-Many needs a new table",
+    body: `
+      <p>Each Order can contain many Items, and each Item can appear in many Orders. You <strong>cannot</strong> solve this with one extra column in either table — there's nowhere to put a single foreign key value when there are multiple matches on both sides.</p>
+      <div class="callout watch"><strong>The rule</strong>Create a brand-new table for the relationship. It gets: (1) foreign keys to both related entities' primary keys, (2) those combined FKs become <em>its</em> primary key, (3) columns for any relationship attributes.</div>
+      <div class="schema-line">Contains(<span class="pk">ItemID, OrderID</span>, Quantity)</div>
+      <p>ItemID and OrderID are each foreign keys — but underlined together because <em>combined</em> they're the primary key of Contains. Quantity is the relationship's own attribute.</p>
+    `},
+  { id: "eer-inheritance", type: "concept",
+    eyebrow: "Mod 5 · 6/10 · Advanced: inheritance",
+    title: "Superclass / subclass → linked tables",
+    body: `
+      <p>When an EER diagram has a superclass with subclasses (like Book → Paper Book, Electronic Book), each entity — super and sub — still gets its own table.</p>
+      <div class="callout"><strong>The rule</strong>Give each subclass table a foreign key that references the primary key of the superclass table.</div>
+      <p>So Paper_Book and Electronic_Book each carry a FK pointing back to Book's primary key, linking every specific book to its general record.</p>
+    `},
+  { id: "eer-union", type: "concept",
+    eyebrow: "Mod 5 · 7/10 · Advanced: union",
+    title: "Union (category) → multiple FKs on one side",
+    body: `
+      <p>A union is the reverse shape from inheritance: one table (like Book Copy) can relate to <em>one of several</em> different entity types (E-Book <em>or</em> Paper-Book).</p>
+      <div class="callout"><strong>The rule</strong>Put multiple foreign keys in the main category table, one referencing each possible type.</div>
+      <div class="schema-line">Book_Copy(<span class="pk">BCID</span>, EBID, PBID)</div>
+      <p>For any given row, only one of EBID / PBID is actually filled in — the other is NULL, depending on which type that copy is.</p>
+    `},
+  { id: "eer-composite", type: "concept",
+    eyebrow: "Mod 5 · 8/10 · Attributes: composite",
+    title: "Composite attributes → one column per part",
+    body: `
+      <p>A composite attribute is one conceptual attribute made of multiple parts — think "Address" splitting into Street, City, State, Zip.</p>
+      <div class="callout"><strong>The rule</strong>Give each part its own column in the table. There's no single "Address" column — there's Street, City, State, and Zip, side by side.</div>
+    `},
+  { id: "eer-multivalued", type: "concept",
+    eyebrow: "Mod 5 · 9/10 · Attributes: multi-valued",
+    title: "Multi-valued attributes → their own table",
+    body: `
+      <p>Remember: relations only allow atomic values in a cell. So a multi-valued attribute — like a Department having several Locations — can't just be a column.</p>
+      <div class="callout watch"><strong>The rule</strong>Create a new table for it. Add a foreign key back to the original entity. Each value gets its own row.</div>
+      <div class="schema-line">Dept_Locations(<span class="pk">Dnumber, Dlocation</span>)</div>
+      <p>Dnumber is a FK referencing Department.Dnumber — and together with Dlocation it forms this table's primary key, since a department can repeat across rows but not the same location twice.</p>
+    `},
+  { id: "eer-worked-example", type: "concept",
+    eyebrow: "Mod 5 · 10/10 · Full worked example",
+    title: "The online-store schema, start to finish",
+    body: `
+      <p>Putting all of it together for the User / Item / Order example:</p>
+      <div class="schema-line">User(<span class="pk">Username</span>, Password, Email)</div>
+      <div class="schema-line">Item(<span class="pk">ItemID</span>, Description, Name, Category, Rating, Price)</div>
+      <div class="schema-line">Order(<span class="pk">OrderID</span>, Address, Payment, Uname)</div>
+      <div class="schema-line">Contains(<span class="pk">ItemID, OrderID</span>, Quantity)</div>
+      <table class="rel-table">
+        <caption>Sample populated Order table</caption>
+        <thead><tr><th class="pk">OrderID</th><th>Address</th><th>Payment</th><th class="fk">Uname (FK)</th></tr></thead>
+        <tbody>
+          <tr><td>10</td><td>123 Main St</td><td>Visa</td><td>John_Smith</td></tr>
+          <tr><td>16</td><td>857 Ex St</td><td>Master Card</td><td>Adam_Sam</td></tr>
+        </tbody>
+      </table>
+      <p>4 entities/relationships in the EER diagram → 4 tables. One 1-N relationship (Order→User) became a foreign key column. One N-M relationship (Order↔Item) became its own table, Contains.</p>
+    `},
+  { id: "glossary", type: "glossary" },
+  { id: "quiz", type: "quiz" },
+  { id: "done", type: "done" },
+];
+
+const quizQuestions = [
+  { q: "In the relational model, what does \u201Crelation\u201D mean?",
+    opts: ["An interaction between two entities", "A table with rows and columns", "A foreign key link", "A type of database model"],
+    correct: 1,
+    why: "Relation = table. \u201CRelationship\u201D (ER model) is the interaction between entities — easy to mix up, different word." },
+  { q: "What's the formal name for a row in a relation?",
+    opts: ["Attribute", "Domain", "Tuple", "Schema"],
+    correct: 2,
+    why: "Rows = tuples. Columns = attributes." },
+  { q: "A superkey with no extra, removable attributes is called a...",
+    opts: ["Primary key", "Foreign key", "Domain", "Key"],
+    correct: 3,
+    why: "A key is a minimal superkey. Primary key is just the one key you officially pick." },
+  { q: "Which is TRUE about entity integrity?",
+    opts: [
+      "Every table needs a primary key, and it can never be NULL",
+      "Foreign keys must always be NULL",
+      "It only applies to tables with two or more attributes",
+      "It's optional if the table is small"
+    ],
+    correct: 0,
+    why: "Entity integrity = every table has a PK, and PK attributes are never NULL on any row." },
+  { q: "A foreign key value is allowed to be NULL when...",
+    opts: [
+      "It's never allowed to be NULL",
+      "The referenced table is empty",
+      "That FK is not part of its own table's primary key",
+      "The referencing table has no primary key"
+    ],
+    correct: 2,
+    why: "NULL is fine for a FK unless that same attribute is also (part of) the primary key of its own table — that would break entity integrity." },
+  { q: "Converting a 1-N relationship to a schema, where does the foreign key go?",
+    opts: ["On the One side's table", "On the Many side's table", "In a brand-new table", "It isn't needed"],
+    correct: 1,
+    why: "The extra FK column goes on the Many side, referencing the primary key of the One side." },
+  { q: "Why can't an N-M relationship be handled with a FK column in either existing table?",
+    opts: [
+      "N-M relationships don't need any extra structure",
+      "Each side can match multiple rows on the other side, so one FK column can't hold all the matches",
+      "Foreign keys are never allowed in N-M relationships",
+      "N-M only applies to inheritance"
+    ],
+    correct: 1,
+    why: "With multiple matches possible on both sides, a single FK column has nowhere to put more than one value — so you need a new table instead." },
+  { q: "In the Contains(ItemID, OrderID, Quantity) table, why are ItemID and OrderID underlined together?",
+    opts: [
+      "Because they're both foreign keys, full stop",
+      "Combined, they form Contains' own primary key",
+      "Quantity is actually the primary key",
+      "Underlining is optional and doesn't mean anything here"
+    ],
+    correct: 1,
+    why: "In an N-M relationship table, the combined foreign keys become that new table's primary key — that's why both get underlined together." },
+  { q: "How is a multi-valued attribute like Department Locations handled in a schema?",
+    opts: [
+      "Store all locations in one comma-separated cell",
+      "Create a new table with a FK back to the original entity; one row per value",
+      "Delete the attribute since it isn't supported",
+      "Add one column per possible location"
+    ],
+    correct: 1,
+    why: "Relations only hold atomic values, so a multi-valued attribute needs its own table — one FK-linked row per value." },
+  { type: "matching",
+    q: "Match each term with its definition.",
+    pairs: [
+      ["Relation Schema", "The description of a relation."],
+      ["Relation State", "It holds the current state of a relation showing instances stored in it."],
+      ["Relational Database Schema", "The description of a relational database showing its tables, attributes, etc."],
+      ["Relational Database State", "The current state of a relationsal database showing all data instances stored in tables"],
+      ["Primary Key", "A special column that has a unique value associated with each tuple and acts as an identifier for the whole tuple"],
+      ["Foreign Key", "A special column in one table that references a primary key in another table."]
+    ],
+    why: "Relation and database schemas are descriptions; relation and database states show what is currently stored. Primary keys identify tuples, and foreign keys reference primary keys in another table." },
+  { type: "multi-select",
+    q: "Entity integrity is ensured via:",
+    opts: [
+      "selecting one candidate key to become the primary key of the table.",
+      "ensuring there are no null values in the tables",
+      "ensuring all columns have unique values for all rows/tuples",
+      "not allowing duplicate tuples/rows in a relation/table"
+    ],
+    correct: [0, 3],
+    why: "Entity integrity requires selecting a primary key and treating a relation as a set, so duplicate tuples are not allowed. NULL is prohibited only in primary-key attributes, and uniqueness is required only for key attributes." },
+  { type: "multi-select",
+    q: "Choose everything that applies to referential integrity:",
+    opts: [
+      "it ensures that data is referenced properly across tables.",
+      "it ensures that no referencing is allowed between tables to reduce redundancy.",
+      "It allows for adding new primary key values in the referenced table by specifying them in the foreign key column in the referencing table.",
+      "it ensures that a foreign key value in the referencing table must match a primary key value in the referenced table."
+    ],
+    correct: [0, 3],
+    why: "Referential integrity ensures foreign-key values properly reference existing primary-key values across tables." },
+];
+
+const glossary = [
+  ["Relation", "A table with special properties: atomic values, ordered/unique rows called tuples. Not the same as a \u201Crelationship.\u201D"],
+  ["Tuple", "A row in a relation — one instance of an entity or relationship."],
+  ["Attribute", "A column in a relation — a property of the entity/relationship."],
+  ["Domain", "The set of legal values (data type + format) for an attribute."],
+  ["Schema (of a relation)", "The table's name plus its attribute list, e.g. Employee(SSN, Name, Address, Salary)."],
+  ["State (of a relation)", "The actual set of rows in a table right now — a snapshot that changes with every insert/delete/update."],
+  ["Superkey", "Any set of attributes with no duplicate values across all rows."],
+  ["Key", "A minimal superkey — removing any attribute breaks its uniqueness."],
+  ["Primary key", "The key chosen to officially identify rows; its attributes are underlined in a schema."],
+  ["Surrogate key", "An artificial, assigned ID used when no natural key attribute exists."],
+  ["Entity integrity", "Every table must have a primary key, and PK attributes can never be NULL."],
+  ["Referential integrity", "A foreign key value must match an existing PK value in the referenced table, or be NULL."],
+  ["Foreign key (FK)", "An attribute in one table that references the primary key of another table."],
+  ["Cardinality (1-1, 1-N, N-M)", "How many instances on each side of a relationship can match: one, many, or many-to-many."],
+  ["1-N conversion rule", "Add a FK column to the table on the Many side, referencing the primary key of the One side."],
+  ["N-M conversion rule", "Create a brand-new table with FKs to both related entities; those combined FKs become its primary key."],
+  ["Superclass / subclass", "A superclass is the general entity (e.g. Book); subclasses are its specific types (e.g. Paper Book, Electronic Book)."],
+  ["Inheritance conversion rule", "One table per entity (super + sub); each subclass table gets a FK referencing the superclass's primary key."],
+  ["Union / category", "A relationship shape where one entity can relate to one of several different types (e.g. a Book Copy is either an E-Book or a Paper-Book)."],
+  ["Union conversion rule", "Put one FK per possible type in the main category table; only the matching FK is filled in per row, the rest are NULL."],
+  ["Composite attribute", "One conceptual attribute made of multiple parts (e.g. Address → Street, City, State, Zip)."],
+  ["Multi-valued attribute", "An attribute that can hold more than one value for a single entity instance (e.g. a Department's Locations)."],
+  ["Multi-valued conversion rule", "Create a new table with a FK back to the original entity; each value becomes its own row."],
+];
+
+/* ---------------- state ---------------- */
+let idx = 0;
+let completed = new Set();
+let reviewStates = {};
+let reviewQueue = [];
+let reviewMode = false;
+let tinyWins = 0;
+let focusSeconds = 0;
+let focusTimer = null;
+let practiceQuestions = [];
+let practiceIdx = 0;
+let practiceScore = 0;
+let quizAnswered = new Array(quizQuestions.length).fill(null);
+let quizIdx = 0;
+let quizScore = 0;
+
+function loadProgress() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      completed = new Set(parsed.completed || []);
+      reviewStates = parsed.reviewStates || {};
+      tinyWins = parsed.tinyWins || 0;
+      idx = Math.min(parsed.idx || 0, steps.length - 1);
+    }
+  } catch (e) { /* start fresh */ }
+}
+function saveProgress() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ completed: [...completed], reviewStates, tinyWins, idx }));
+  } catch (e) { /* ignore */ }
+}
+
+/* ---------------- render ---------------- */
+const cardHost = document.getElementById("cardHost");
+const navRow = document.getElementById("navRow");
+const nextBtn = document.getElementById("nextBtn");
+const backBtn = document.getElementById("backBtn");
+const dotsEl = document.getElementById("dots");
+const stepLabel = document.getElementById("stepLabel");
+const progressFill = document.getElementById("progressFill");
+const winCount = document.getElementById("winCount");
+const winToast = document.getElementById("winToast");
+
+function conceptCount() {
+  return steps.filter(s => s.type === "concept").length;
+}
+
+function renderTopbar() {
+  const conceptSteps = steps.filter(s => s.type === "concept");
+  const doneCount = conceptSteps.filter(s => completed.has(s.id)).length;
+  stepLabel.textContent = `${doneCount} / ${conceptSteps.length} learned`;
+  progressFill.style.width = `${(doneCount / conceptSteps.length) * 100}%`;
+  winCount.textContent = `${tinyWins} tiny win${tinyWins === 1 ? "" : "s"}`;
+
+  dotsEl.innerHTML = "";
+  steps.forEach((s, i) => {
+    if (s.type === "welcome" || s.type === "done") return;
+    const d = document.createElement("div");
+    d.className = "dot" + (i === idx ? " active" : "") + (completed.has(s.id) ? " done" : "");
+    dotsEl.appendChild(d);
+  });
+}
+
+function renderWelcome() {
+  navRow.style.display = "flex";
+  backBtn.style.visibility = "hidden";
+  nextBtn.textContent = "Start →";
+  cardHost.innerHTML = `
+    <div class="center-flow">
+      <div class="eyebrow">IFT 200 · Modules 4 & 5</div>
+      <h2 style="font-size:28px; margin-bottom:10px;">The Relational Model → EER-to-Schema</h2>
+      <p style="font-size:15px; color:var(--ink-soft); margin-bottom:16px;">Built from both lecture transcripts + textbook Ch. 5. One idea per screen, nothing to scroll past.</p>
+      <div class="chip-row">
+        <span class="chip">20 concept cards</span>
+        <span class="chip">glossary flashcards</span>
+        <span class="chip">9-question check</span>
+        <span class="chip">~22 min</span>
+      </div>
+      <div class="callout"><strong>There is no catching up</strong>Pick the smallest next step. Everything saves automatically, including the cards that need another look.</div>
+      <div class="mission-grid">
+        <button class="mission" id="continueBtn"><strong>Keep going</strong><span>Continue from where you paused</span></button>
+        <button class="mission review" id="quickReviewBtn"><strong>5-minute rescue</strong><span>Review up to five tricky cards</span></button>
+        <button class="mission" id="oneCardBtn"><strong>One-card win</strong><span>Open one random idea and call it done</span></button>
+        <button class="mission" id="sprintBtn"><strong>Focus sprint</strong><span>Five minutes, guided and gentle</span></button>
+        <button class="mission review" id="practiceQuizBtn"><strong>Practice quiz</strong><span>Five questions, instant feedback</span></button>
+      </div>
+    </div>
+  `;
+  document.getElementById("quickReviewBtn").onclick = startQuickReview;
+  document.getElementById("continueBtn").onclick = () => { idx = Math.max(idx, 1); render(); };
+  document.getElementById("oneCardBtn").onclick = () => {
+    const concepts = steps.filter(step => step.type === "concept");
+    idx = steps.findIndex(step => step.id === concepts[Math.floor(Math.random() * concepts.length)].id);
+    render();
+  };
+  document.getElementById("sprintBtn").onclick = () => {
+    startFocusSprint();
+    startQuickReview();
+    updateFocusClock();
+  };
+  document.getElementById("practiceQuizBtn").onclick = startPracticeQuiz;
+}
+
+function renderConcept(step) {
+  navRow.style.display = "flex";
+  backBtn.style.visibility = "visible";
+  nextBtn.textContent = "Next →";
+  const state = reviewStates[step.id] || "";
+  const isDone = state === "got-it";
+  cardHost.innerHTML = `
+    ${focusSeconds ? `<div class="focus-strip"><span>Focus sprint <strong id="focusClock"></strong></span><button class="btn-ghost" id="stopFocusBtn">End sprint</button></div>` : ""}
+    <div class="eyebrow">${step.eyebrow}</div>
+    <h2>${step.title}</h2>
+    <div class="card-body">${step.body}</div>
+    <div class="understanding-actions">
+      <button class="btn-got-it ${isDone ? "done" : ""}" data-state="got-it">${isDone ? "✓ Got it" : "Got it"}</button>
+      <button class="btn-review" data-state="review">Need another pass</button>
+      <button class="btn-confusing" data-state="confusing">Still confusing</button>
+    </div>
+    ${reviewMode ? '<p class="review-note">Review card ' + (reviewQueue.indexOf(step.id) + 1) + ' of ' + reviewQueue.length + '.</p>' : ''}
+  `;
+  cardHost.querySelectorAll("[data-state]").forEach(button => {
+    button.onclick = () => {
+      const nextState = button.dataset.state;
+      const previousState = reviewStates[step.id];
+      reviewStates[step.id] = nextState;
+      if (nextState === "got-it") completed.add(step.id);
+      else completed.delete(step.id);
+      if (nextState === "got-it" && previousState !== "got-it") celebrate("Tiny win saved. Nice.");
+      saveProgress();
+      renderConcept(step);
+      renderTopbar();
+    };
+  });
+  const stopFocusBtn = document.getElementById("stopFocusBtn");
+  if (stopFocusBtn) stopFocusBtn.onclick = stopFocusSprint;
+}
+
+function celebrate(message) {
+  tinyWins++;
+  winToast.textContent = message;
+  winToast.classList.add("show");
+  window.setTimeout(() => winToast.classList.remove("show"), 1800);
+}
+
+function updateFocusClock() {
+  const clock = document.getElementById("focusClock");
+  if (clock) clock.textContent = `${Math.floor(focusSeconds / 60)}:${String(focusSeconds % 60).padStart(2, "0")}`;
+}
+
+function startFocusSprint() {
+  if (focusTimer) window.clearInterval(focusTimer);
+  focusSeconds = 5 * 60;
+  focusTimer = window.setInterval(() => {
+    focusSeconds--;
+    updateFocusClock();
+    if (focusSeconds <= 0) {
+      stopFocusSprint();
+      winToast.textContent = "Sprint complete. Take a breath.";
+      winToast.classList.add("show");
+    }
+  }, 1000);
+}
+
+function stopFocusSprint() {
+  window.clearInterval(focusTimer);
+  focusTimer = null;
+  focusSeconds = 0;
+  render();
+}
+
+function startQuickReview() {
+  const concepts = steps.filter(step => step.type === "concept");
+  const selected = concepts.filter(step => ["confusing", "review"].includes(reviewStates[step.id]));
+  const fallback = concepts.filter(step => !completed.has(step.id));
+  reviewQueue = (selected.length ? selected : fallback).slice(0, 5).map(step => step.id);
+  if (!reviewQueue.length) reviewQueue = concepts.slice(0, 5).map(step => step.id);
+  reviewMode = true;
+  idx = steps.findIndex(step => step.id === reviewQueue[0]);
+  saveProgress();
+  render();
+}
+
+function renderGlossary() {
+  navRow.style.display = "flex";
+  backBtn.style.visibility = "visible";
+  nextBtn.textContent = "Next →";
+  const items = glossary.map(([term, def], i) => `
+    <div class="flash" data-i="${i}">
+      <div class="term">${term}</div>
+      <div class="def">${def}</div>
+      <div class="hint">tap to flip</div>
+    </div>
+  `).join("");
+  cardHost.innerHTML = `
+    <div class="eyebrow">Review · flashcards</div>
+    <h2>Quick glossary</h2>
+    <div class="card-body">
+      <p style="margin-bottom:14px;">Tap a term to see the definition.</p>
+      ${items}
+    </div>
+  `;
+  cardHost.querySelectorAll(".flash").forEach(el => {
+    el.addEventListener("click", () => el.classList.toggle("open"));
+  });
+}
+
+function renderQuiz() {
+  navRow.style.display = "none";
+  if (quizIdx >= quizQuestions.length) {
+    cardHost.innerHTML = `
+      <div class="center-flow">
+        <div class="eyebrow">Self-check complete</div>
+        <div class="quiz-score">${quizScore} / ${quizQuestions.length}</div>
+        <p style="margin-top:10px; color:var(--ink-soft);">${quizScore === quizQuestions.length ? "Clean sweep — you've got this module." : "Solid. Revisit any card you weren't sure on, then move on."}</p>
+        <div class="nav-row" style="margin-top:16px;">
+          <button class="btn-ghost" id="retryQuiz">Retry quiz</button>
+          <button class="btn-primary" id="finishBtn">Finish →</button>
+        </div>
+      </div>
+    `;
+    document.getElementById("retryQuiz").onclick = () => {
+      quizIdx = 0; quizScore = 0; quizAnswered = new Array(quizQuestions.length).fill(null);
+      renderQuiz();
+    };
+    document.getElementById("finishBtn").onclick = () => { idx++; saveProgress(); render(); };
+    return;
+  }
+  const q = quizQuestions[quizIdx];
+  if (q.type === "matching") {
+    renderMatchingQuestion(q, "quiz", () => { quizScore++; }, () => { quizIdx++; renderQuiz(); });
+    return;
+  }
+  if (q.type === "multi-select") {
+    renderMultiSelectQuestion(q, "quiz", () => { quizScore++; }, () => { quizIdx++; renderQuiz(); });
+    return;
+  }
+  cardHost.innerHTML = `
+    <div class="eyebrow">Self-check · question ${quizIdx + 1} of ${quizQuestions.length}</div>
+    <div class="quiz-q">${q.q}</div>
+    <div id="optsHost"></div>
+    <div class="quiz-feedback" id="fb"></div>
+    <div class="nav-row" style="margin-top:auto;">
+      <button class="btn-primary" id="quizNext" style="display:none;">Next question →</button>
+    </div>
+  `;
+  const optsHost = document.getElementById("optsHost");
+  q.opts.forEach((opt, i) => {
+    const b = document.createElement("button");
+    b.className = "opt";
+    b.textContent = opt;
+    b.onclick = () => {
+      optsHost.querySelectorAll("button").forEach(x => x.disabled = true);
+      if (i === q.correct) {
+        b.classList.add("correct");
+        quizScore++;
+        document.getElementById("fb").textContent = "✓ Right — " + q.why;
+      } else {
+        b.classList.add("wrong");
+        optsHost.children[q.correct].classList.add("correct");
+        document.getElementById("fb").textContent = "✗ Not quite — " + q.why;
+      }
+      document.getElementById("quizNext").style.display = "block";
+    };
+    optsHost.appendChild(b);
+  });
+  document.getElementById("quizNext").onclick = () => { quizIdx++; renderQuiz(); };
+}
+
+function renderMatchingQuestion(question, prefix, onCorrect, onNext) {
+  navRow.style.display = "none";
+  const definitions = question.pairs.map(([, definition]) => definition).sort(() => Math.random() - 0.5);
+  const questionNumber = prefix === "quiz" ? `${quizIdx + 1} of ${quizQuestions.length}` : `${practiceIdx + 1} of ${practiceQuestions.length}`;
+  cardHost.innerHTML = `
+    <div class="eyebrow">${prefix === "quiz" ? "Self-check" : "Practice quiz"} · question ${questionNumber}</div>
+    <div class="quiz-q">${question.q}</div>
+    <div class="match-list" id="${prefix}Matches">
+      ${question.pairs.map(([term]) => `<div class="match-row"><label>${term}</label><select><option value="">Choose a definition...</option>${definitions.map(definition => `<option value="${definition}">${definition}</option>`).join("")}</select></div>`).join("")}
+    </div>
+    <div class="quiz-feedback" id="${prefix}Feedback"></div>
+    <div class="nav-row" style="margin-top:auto;">
+      ${prefix === "practice" ? `<button class="btn-ghost" id="${prefix}Exit">Exit quiz</button>` : ""}
+      <button class="btn-primary" id="${prefix}Check">Check matches</button>
+      <button class="btn-primary" id="${prefix}Next" style="display:none;">Next question →</button>
+    </div>
+  `;
+  const matches = document.getElementById(`${prefix}Matches`);
+  document.getElementById(`${prefix}Check`).onclick = () => {
+    const rows = [...matches.children];
+    const allChosen = rows.every(row => row.querySelector("select").value);
+    if (!allChosen) {
+      document.getElementById(`${prefix}Feedback`).textContent = "Choose one definition for every term first.";
+      return;
+    }
+    let allCorrect = true;
+    rows.forEach((row, pairIndex) => {
+      const select = row.querySelector("select");
+      const correct = select.value === question.pairs[pairIndex][1];
+      row.classList.add(correct ? "correct" : "wrong");
+      select.disabled = true;
+      if (!correct) allCorrect = false;
+    });
+    if (allCorrect) onCorrect();
+    document.getElementById(`${prefix}Feedback`).textContent = `${allCorrect ? "Perfect match - " : "Some matches need another look - "}${question.why}`;
+    document.getElementById(`${prefix}Check`).style.display = "none";
+    document.getElementById(`${prefix}Next`).style.display = "block";
+  };
+  document.getElementById(`${prefix}Next`).onclick = onNext;
+  const exit = document.getElementById(`${prefix}Exit`);
+  if (exit) exit.onclick = () => render();
+}
+
+function renderMultiSelectQuestion(question, prefix, onCorrect, onNext) {
+  navRow.style.display = "none";
+  const questionNumber = prefix === "quiz" ? `${quizIdx + 1} of ${quizQuestions.length}` : `${practiceIdx + 1} of ${practiceQuestions.length}`;
+  cardHost.innerHTML = `
+    <div class="eyebrow">${prefix === "quiz" ? "Self-check" : "Practice quiz"} · question ${questionNumber}</div>
+    <h2 style="font-size:20px; margin-bottom:14px;">Choose all that apply</h2>
+    <div class="quiz-q">${question.q}</div>
+    <div id="${prefix}MultiOptions">${question.opts.map((option, optionIndex) => `<label class="multi-option"><input type="checkbox" value="${optionIndex}"><span>${option}</span></label>`).join("")}</div>
+    <div class="quiz-feedback" id="${prefix}Feedback"></div>
+    <div class="nav-row" style="margin-top:auto;">
+      ${prefix === "practice" ? `<button class="btn-ghost" id="${prefix}Exit">Exit quiz</button>` : ""}
+      <button class="btn-primary" id="${prefix}Check">Check answers</button>
+      <button class="btn-primary" id="${prefix}Next" style="display:none;">Next question →</button>
+    </div>
+  `;
+  const options = [...document.querySelectorAll(`#${prefix}MultiOptions .multi-option`)];
+  document.getElementById(`${prefix}Check`).onclick = () => {
+    const selected = options.map((option, optionIndex) => option.querySelector("input").checked ? optionIndex : null).filter(Number.isInteger);
+    if (!selected.length) {
+      document.getElementById(`${prefix}Feedback`).textContent = "Choose at least one answer first.";
+      return;
+    }
+    const isCorrect = selected.length === question.correct.length && selected.every(optionIndex => question.correct.includes(optionIndex));
+    options.forEach((option, optionIndex) => {
+      const shouldSelect = question.correct.includes(optionIndex);
+      const wasSelected = selected.includes(optionIndex);
+      if (shouldSelect) option.classList.add("correct");
+      else if (wasSelected) option.classList.add("wrong");
+      option.querySelector("input").disabled = true;
+    });
+    if (isCorrect) onCorrect();
+    document.getElementById(`${prefix}Feedback`).textContent = `${isCorrect ? "Exactly right - " : "Not quite - "}${question.why}`;
+    document.getElementById(`${prefix}Check`).style.display = "none";
+    document.getElementById(`${prefix}Next`).style.display = "block";
+  };
+  document.getElementById(`${prefix}Next`).onclick = onNext;
+  const exit = document.getElementById(`${prefix}Exit`);
+  if (exit) exit.onclick = () => render();
+}
+
+function startPracticeQuiz() {
+  practiceQuestions = [...quizQuestions].sort(() => Math.random() - 0.5).slice(0, 5);
+  practiceIdx = 0;
+  practiceScore = 0;
+  renderPracticeQuiz();
+}
+
+function renderPracticeQuiz() {
+  navRow.style.display = "none";
+  if (practiceIdx >= practiceQuestions.length) {
+    cardHost.innerHTML = `
+      <div class="center-flow">
+        <div class="eyebrow">Practice complete</div>
+        <div class="quiz-score">${practiceScore} / ${practiceQuestions.length}</div>
+        <p style="margin-top:10px; color:var(--ink-soft);">${practiceScore >= 4 ? "That is a strong pass. Keep the momentum light." : "Useful signal, not a grade. Your review cards are waiting when you are ready."}</p>
+        <div class="nav-row" style="margin-top:16px;">
+          <button class="btn-ghost" id="practiceAgain">New five questions</button>
+          <button class="btn-primary" id="practiceHome">Back to missions</button>
+        </div>
+      </div>
+    `;
+    document.getElementById("practiceAgain").onclick = startPracticeQuiz;
+    document.getElementById("practiceHome").onclick = () => render();
+    return;
+  }
+  const question = practiceQuestions[practiceIdx];
+  if (question.type === "matching") {
+    renderMatchingQuestion(question, "practice", () => { practiceScore++; }, () => { practiceIdx++; renderPracticeQuiz(); });
+    return;
+  }
+  if (question.type === "multi-select") {
+    renderMultiSelectQuestion(question, "practice", () => { practiceScore++; }, () => { practiceIdx++; renderPracticeQuiz(); });
+    return;
+  }
+  cardHost.innerHTML = `
+    <div class="eyebrow">Practice quiz · ${practiceIdx + 1} of ${practiceQuestions.length}</div>
+    <h2 style="font-size:20px; margin-bottom:14px;">Quick check</h2>
+    <div class="quiz-q">${question.q}</div>
+    <div id="practiceOpts"></div>
+    <div class="quiz-feedback" id="practiceFeedback"></div>
+    <div class="nav-row" style="margin-top:auto;">
+      <button class="btn-ghost" id="practiceExit">Exit quiz</button>
+      <button class="btn-primary" id="practiceNext" style="display:none;">Next question →</button>
+    </div>
+  `;
+  const optionsHost = document.getElementById("practiceOpts");
+  question.opts.forEach((option, optionIndex) => {
+    const button = document.createElement("button");
+    button.className = "opt";
+    button.textContent = option;
+    button.onclick = () => {
+      optionsHost.querySelectorAll("button").forEach(optionButton => optionButton.disabled = true);
+      if (optionIndex === question.correct) {
+        button.classList.add("correct");
+        practiceScore++;
+        document.getElementById("practiceFeedback").textContent = "Right - " + question.why;
+      } else {
+        button.classList.add("wrong");
+        optionsHost.children[question.correct].classList.add("correct");
+        document.getElementById("practiceFeedback").textContent = "Not quite - " + question.why;
+      }
+      document.getElementById("practiceNext").style.display = "block";
+    };
+    optionsHost.appendChild(button);
+  });
+  document.getElementById("practiceExit").onclick = () => render();
+  document.getElementById("practiceNext").onclick = () => {
+    practiceIdx++;
+    renderPracticeQuiz();
+  };
+}
+
+function renderDone() {
+  navRow.style.display = "flex";
+  backBtn.style.visibility = "visible";
+  nextBtn.style.display = "none";
+  const conceptSteps = steps.filter(s => s.type === "concept");
+  const doneCount = conceptSteps.filter(s => completed.has(s.id)).length;
+  cardHost.innerHTML = `
+    <div class="center-flow">
+      <div class="eyebrow">Modules 4 & 5 complete</div>
+      <h2 style="margin-bottom:10px;">Nice work.</h2>
+      <p style="color:var(--ink-soft); margin-bottom:14px;">You marked ${doneCount} of ${conceptSteps.length} concepts understood, and your quiz score was ${quizScore} / ${quizQuestions.length}.</p>
+      <div class="callout teal"><strong>Try it yourself</strong>Take your own EER diagram (or the Pizza Ordering System example from lab) and walk it through the same rules: one table per entity, FK on the Many side of a 1-N, a new table for N-M, one column per composite part.</div>
+      <div class="callout"><strong>Before next class</strong>If any concept card didn't get a "Got it," that's your review list. Go back and re-mark it.</div>
+    </div>
+  `;
+}
+
+function render() {
+  const step = steps[idx];
+  if (reviewMode && step.type === "concept" && !reviewQueue.includes(step.id)) {
+    reviewMode = false;
+    reviewQueue = [];
+  }
+  if (step.type === "welcome") renderWelcome();
+  else if (step.type === "concept") renderConcept(step);
+  else if (step.type === "glossary") renderGlossary();
+  else if (step.type === "quiz") { quizIdx = 0; quizScore = 0; quizAnswered = new Array(quizQuestions.length).fill(null); renderQuiz(); }
+  else if (step.type === "done") renderDone();
+  renderTopbar();
+  window.scrollTo({ top: 0, behavior: "instant" });
+}
+
+nextBtn.onclick = () => {
+  if (reviewMode) {
+    const queuePosition = reviewQueue.indexOf(steps[idx].id);
+    if (queuePosition >= 0 && queuePosition < reviewQueue.length - 1) {
+      idx = steps.findIndex(step => step.id === reviewQueue[queuePosition + 1]);
+    } else {
+      reviewMode = false;
+      reviewQueue = [];
+      idx = 0;
+    }
+    saveProgress();
+    render();
+    return;
+  }
+  if (idx < steps.length - 1) { idx++; saveProgress(); render(); }
+};
+backBtn.onclick = () => {
+  if (reviewMode) {
+    reviewMode = false;
+    reviewQueue = [];
+    idx = 0;
+    saveProgress();
+    render();
+    return;
+  }
+  if (idx > 0) { idx--; saveProgress(); render(); }
+};
+
+loadProgress();
+render();
+</script>
+</body>
+</html>
